@@ -1,0 +1,6 @@
+﻿<Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Shared.ErrorPages.NotFound)">
+    <Found Context="routeData">
+        <RouteView RouteData="routeData" DefaultLayout="typeof(Shared.Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+</Router>

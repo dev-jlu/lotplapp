@@ -1,0 +1,43 @@
+# .NET / Visual Studio
+[Bb]in/
+[Oo]bj/
+[Log]s/
+[Tt]est[Rr]esults/
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.slnx.user
+.roslyn/
+
+# NuGet
+*.nupkg
+**/packages/*
+!**/packages/build/
+
+# Databases
+*.db
+*.sdb
+*.mdf
+*.ldf
+*.sqlite
+
+# Security & Config
+.env
+.env.*
+appsettings.Development.json
+appsettings.Local.json
+
+# Web & Deployment
+node_modules/
+.sass-cache/
+dist/
+*.pubxml
+*.publish.htm
+publish/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
