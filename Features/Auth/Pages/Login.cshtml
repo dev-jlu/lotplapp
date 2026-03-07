@@ -1,0 +1,31 @@
+@page "/auth/login"
+@model Lotplapp.Features.Auth.Pages.LoginModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<h2>Login</h2>
+
+<form method="post">
+    @Html.AntiForgeryToken()
+
+    <div asp-validation-summary="ModelOnly"></div>
+
+    <div>
+        <label asp-for="Input.Email">Email</label>
+        <input asp-for="Input.Email" type="email" autocomplete="email" />
+        <span asp-validation-for="Input.Email"></span>
+    </div>
+
+    <div>
+        <label asp-for="Input.Password">Password</label>
+        <input asp-for="Input.Password" type="password" autocomplete="current-password" />
+        <span asp-validation-for="Input.Password"></span>
+    </div>
+
+    <div>
+        <label asp-for="Input.RememberMe">Remember me</label>
+        <input asp-for="Input.RememberMe" type="checkbox" />
+    </div>
+
+
+    <button type="submit">Login</button>
+</form>

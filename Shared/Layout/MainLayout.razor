@@ -1,5 +1,10 @@
 ﻿@inherits LayoutComponentBase
 
+<form method="post" action="/auth/logout">
+    <AntiforgeryToken />
+    <button type="submit">Logout</button>
+</form>
+
 @Body
 
 <div id="blazor-error-ui" data-nosnippet>
