@@ -3,16 +3,17 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Lotplapp.Features.Users.Domain;
 
 namespace Lotplapp.Features.Auth.Pages;
 
 [AllowAnonymous]
 public class LoginModel : PageModel
 {
-    private readonly SignInManager<ApplicationUser> _signInManager;
+    private readonly SignInManager<User> _signInManager;
     private readonly ILogger<LoginModel> _logger;
 
-    public LoginModel(SignInManager<ApplicationUser> signInManager, ILogger<LoginModel> logger)
+    public LoginModel(SignInManager<User> signInManager, ILogger<LoginModel> logger)
     {
         _signInManager = signInManager;
         _logger = logger;
@@ -40,8 +41,7 @@ public class LoginModel : PageModel
         var result = await _signInManager.PasswordSignInAsync(
             Input.Email,
             Input.Password,
-            isPersistent:
-            Input.RememberMe,
+            isPersistent: Input.RememberMe,
             lockoutOnFailure: true);
 
         if (result.Succeeded)

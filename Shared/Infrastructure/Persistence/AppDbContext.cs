@@ -1,11 +1,10 @@
-using Lotplapp.Features.Auth;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using static System.Net.Mime.MediaTypeNames;
+using Lotplapp.Features.Users.Domain;
 
 namespace Lotplapp.Shared.Infrastructure.Persistence;
 
-public class AppDbContext : IdentityDbContext<ApplicationUser>
+public class AppDbContext : IdentityDbContext<User>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {

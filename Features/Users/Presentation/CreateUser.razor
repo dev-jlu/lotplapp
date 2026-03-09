@@ -1,0 +1,48 @@
+@page "/users/create"
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Lotplapp.Features.Users.Domain
+@attribute [Authorize(Roles = "Admin,Owner")]
+
+<h2>Create User</h2>
+
+@if (_errors.Any())
+{
+    <ul>
+        @foreach (var error in _errors)
+        {
+            <li style="color: red">@error</li>
+        }
+    </ul>
+}
+
+<div>
+    <label>Full Name</label>
+    <input @bind="_fullName" type="text" />
+</div>
+
+<div>
+    <label>Email</label>
+    <input @bind="_email" type="email" />
+</div>
+
+<div>
+    <label>Password</label>
+    <input @bind="_password" type="password" />
+</div>
+
+<div>
+    <label>Role</label>
+    <select @bind="_role">
+        <option value="">-- Select Role --</option>
+        <option value="@UserRoles.Admin">Admin</option>
+        <option value="@UserRoles.Owner">Owner</option>
+        <option value="@UserRoles.Seller">Seller</option>
+    </select>
+</div>
+
+<button @onclick="HandleSubmit" disabled="@_isLoading">
+    @(_isLoading ? "Creating..." : "Create User")
+</button>
+
+<a href="/users">Cancel</a>

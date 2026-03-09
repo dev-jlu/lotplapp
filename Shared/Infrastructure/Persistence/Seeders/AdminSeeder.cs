@@ -1,4 +1,3 @@
-using Lotplapp.Features.Auth;
 using Lotplapp.Features.Users.Domain;
 using Microsoft.AspNetCore.Identity;
 using static System.Net.Mime.MediaTypeNames;
@@ -7,11 +6,11 @@ namespace Lotplapp.Shared.Infrastructure.Persistence.Seeders;
 
 public class AdminSeeder
 {
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly UserManager<User> _userManager;
     private readonly IConfiguration _configuration;
     private readonly ILogger<AdminSeeder> _logger;
 
-    public AdminSeeder(UserManager<ApplicationUser> userManager, IConfiguration configuration, ILogger<AdminSeeder> logger)
+    public AdminSeeder(UserManager<User> userManager, IConfiguration configuration, ILogger<AdminSeeder> logger)
     {
         _userManager = userManager;
         _configuration = configuration;
@@ -36,8 +35,9 @@ public class AdminSeeder
             return;
         }
 
-        var admin = new ApplicationUser
+        var admin = new User
         {
+            FullName = "Administrator",
             UserName = adminEmail,
             Email = adminEmail,
             EmailConfirmed = true

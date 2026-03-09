@@ -1,11 +1,12 @@
 using Lotplapp;
-using Lotplapp.Features.Auth;
 using Lotplapp.Shared.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using static System.Net.Mime.MediaTypeNames;
 using Lotplapp.Shared.Infrastructure.Persistence.Seeders;
+using Lotplapp.Features.Users.Domain;
+using Lotplapp.Features.Users.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,7 +19,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Identity
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+builder.Services.AddIdentity<User, IdentityRole>(options =>
     {
         options.Password.RequireDigit = false;
         options.Password.RequiredLength = 6;
@@ -39,6 +40,8 @@ builder.Services.ConfigureApplicationCookie(options =>
 builder.Services.AddScoped<RoleSeeder>();
 builder.Services.AddScoped<AdminSeeder>();
 builder.Services.AddScoped<DatabaseSeeder>();
+
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.AddRazorPages()
     .WithRazorPagesRoot("/Features");
