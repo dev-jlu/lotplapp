@@ -1,12 +1,32 @@
-﻿<CascadingAuthenticationState>
+<CascadingAuthenticationState>
     <Router AppAssembly="typeof(Program).Assembly" NotFoundPage="typeof(Shared.ErrorPages.NotFound)">
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Shared.Layout.MainLayout)">
                 <NotAuthorized>
-                    <RedirectToLogin />
+                    @if (_authState?.User.Identity?.IsAuthenticated == true)
+                    {
+                        <Shared.ErrorPages.AccessDenied />
+                    }
+                    else
+                    {
+                        <RedirectToLogin />
+                    }
                 </NotAuthorized>
             </AuthorizeRouteView>
             <FocusOnNavigate RouteData="routeData" Selector="h1" />
         </Found>
     </Router>
 </CascadingAuthenticationState>
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthStateTask { get; set; }
+
+    private AuthenticationState? _authState;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthStateTask is not null)
+            _authState = await AuthStateTask;
+    }
+}

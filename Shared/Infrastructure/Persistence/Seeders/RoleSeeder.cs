@@ -1,5 +1,6 @@
 using Lotplapp.Features.Users.Domain;
 using Microsoft.AspNetCore.Identity;
+using System.Linq;
 
 namespace Lotplapp.Shared.Infrastructure.Persistence.Seeders;
 
@@ -16,7 +17,7 @@ public class RoleSeeder
 
     public async Task SeedAsync()
     {
-        string[] roles = [UserRoles.Admin, UserRoles.Owner, UserRoles.Seller, UserRoles.Reporter];
+        string[] roles = new[] { UserRoles.Admin, UserRoles.Owner, UserRoles.Seller, UserRoles.Reporter };
 
         foreach (var role in roles)
         {
