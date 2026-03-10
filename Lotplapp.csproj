@@ -7,6 +7,14 @@
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
   </PropertyGroup>
 
+  <!-- Exclude the test project so the web SDK wildcard doesn't compile test files -->
+  <ItemGroup>
+    <Compile Remove="Lotplapp.Tests/**" />
+    <Content Remove="Lotplapp.Tests/**" />
+    <None Remove="Lotplapp.Tests/**" />
+    <EmbeddedResource Remove="Lotplapp.Tests/**" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.3">

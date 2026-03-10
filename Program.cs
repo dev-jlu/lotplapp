@@ -34,6 +34,8 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LoginPath = "/auth/login";
     options.LogoutPath = "/auth/logout";
     options.AccessDeniedPath = "/auth/login";
+    options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    options.SlidingExpiration = true;
 });
 
 // Seeders
@@ -83,3 +85,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+// Expose Program as a partial class so WebApplicationFactory<Program> can reference it
+// from the test project.
+public partial class Program { }
