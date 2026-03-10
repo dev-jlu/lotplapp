@@ -42,5 +42,5 @@ publish/
 Thumbs.db
 desktop.ini
 
-# Claude Code
-.claude/
+# Claude Code — local-only settings (skills are committed)
+.claude/settings.local.json
