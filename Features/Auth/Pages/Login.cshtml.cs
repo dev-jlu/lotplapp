@@ -11,11 +11,13 @@ namespace Lotplapp.Features.Auth.Pages;
 public class LoginModel : PageModel
 {
     private readonly SignInManager<User> _signInManager;
+    private readonly UserManager<User> _userManager;
     private readonly ILogger<LoginModel> _logger;
 
-    public LoginModel(SignInManager<User> signInManager, ILogger<LoginModel> logger)
+    public LoginModel(SignInManager<User> signInManager, UserManager<User> userManager, ILogger<LoginModel> logger)
     {
         _signInManager = signInManager;
+        _userManager = userManager;
         _logger = logger;
     }
 
@@ -46,6 +48,15 @@ public class LoginModel : PageModel
 
         if (result.Succeeded)
         {
+            var user = await _userManager.FindByEmailAsync(Input.Email);
+            if (user != null && !user.IsActive)
+            {
+                await _signInManager.SignOutAsync();
+                _logger.LogWarning("Deactivated user '{Email}' attempted login.", Input.Email);
+                ModelState.AddModelError(string.Empty, "Your account has been deactivated. Contact an administrator.");
+                return Page();
+            }
+
             _logger.LogInformation("User '{Email}' logged in.", Input.Email);
             return LocalRedirect("/");
         }
