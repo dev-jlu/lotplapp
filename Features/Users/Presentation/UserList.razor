@@ -1,11 +1,16 @@
 @page "/users"
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 
 @attribute [Authorize(Roles = "Admin,Owner,Reporter")]
 
 <h2>User Management</h2>
 
-<a href="/users/create">+ Create User</a>
+<AuthorizeView Roles="Admin,Owner">
+    <Authorized>
+        <a href="/users/create">+ Create User</a>
+    </Authorized>
+</AuthorizeView>
 
 @if (_users is null)
 {

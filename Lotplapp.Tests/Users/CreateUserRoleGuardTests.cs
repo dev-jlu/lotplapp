@@ -128,6 +128,11 @@ public class CreateUserRoleGuardTests
 /// Test harness that exposes the internal state of CreateUser for unit testing.
 /// Provides a way to inject AuthenticationState and invoke HandleSubmit directly
 /// without needing a full Blazor rendering pipeline.
+///
+/// Known limitation: these tests verify the guard logic in isolation via this harness,
+/// not through the real CreateUser Blazor component. The real component's HandleSubmit
+/// is private and cannot be invoked directly without a Blazor rendering pipeline.
+/// Full component-level testing via bunit is deferred.
 /// </summary>
 public class CreateUserTestHarness
 {

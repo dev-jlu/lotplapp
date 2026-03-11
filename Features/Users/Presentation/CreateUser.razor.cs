@@ -1,5 +1,6 @@
 using Lotplapp.Features.Users.Domain;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 
 namespace Lotplapp.Features.Users.Presentation;
 
@@ -9,6 +10,8 @@ public partial class CreateUser
     private IUserRepository UserRepository { get; set; } = default!;
     [Inject]
     private NavigationManager NavigationManager { get; set; } = default!;
+    [Inject]
+    private AuthenticationStateProvider AuthenticationStateProvider { get; set; } = default!;
 
     private string _fullName = string.Empty;
     private string _email = string.Empty;
@@ -32,6 +35,14 @@ public partial class CreateUser
             {
                 Console.WriteLine(_error);
             }
+            return;
+        }
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var currentUser = authState.User;
+        if (_role == UserRoles.Admin && !currentUser.IsInRole(UserRoles.Admin))
+        {
+            _errors.Add("You do not have permission to assign this role.");
             return;
         }
 
