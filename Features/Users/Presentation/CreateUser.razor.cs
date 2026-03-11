@@ -1,5 +1,6 @@
 using Lotplapp.Features.Users.Domain;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Authorization;
 
 namespace Lotplapp.Features.Users.Presentation;
 
@@ -9,6 +10,8 @@ public partial class CreateUser
     private IUserRepository UserRepository { get; set; } = default!;
     [Inject]
     private NavigationManager NavigationManager { get; set; } = default!;
+    [Inject]
+    private AuthenticationStateProvider AuthenticationStateProvider { get; set; } = default!;
 
     private string _fullName = string.Empty;
     private string _email = string.Empty;
@@ -27,26 +30,36 @@ public partial class CreateUser
         if (string.IsNullOrWhiteSpace(_role)) _errors.Add("Role is required.");
 
         if (_errors.Count != 0)
+            return;
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var currentUser = authState.User;
+        if (_role == UserRoles.Admin && !currentUser.IsInRole(UserRoles.Admin))
         {
-            foreach (var _error in _errors)
-            {
-                Console.WriteLine(_error);
-            }
+            _errors.Add("You do not have permission to assign this role.");
             return;
         }
 
+        // Note: guard logic is mirrored in CreateUserTestHarness.InvokeHandleSubmitAsync().
+        // If this logic changes, update the harness too. See: Lotplapp.Tests/Users/CreateUserRoleGuardTests.cs
+
         _isLoading = true;
-
-        var (success, errors) = await UserRepository.CreateAsync(_fullName, _email, _password, _role);
-
-        if (success)
+        try
         {
-            NavigationManager.NavigateTo("/users");
+            var (success, errors) = await UserRepository.CreateAsync(_fullName, _email, _password, _role);
+
+            if (success)
+            {
+                NavigationManager.NavigateTo("/users");
+            }
+            else
+            {
+                _errors = [.. errors];
+            }
         }
-        else
+        finally
         {
-            _errors = [.. errors];
+            _isLoading = false;
         }
-        _isLoading = false;
     }
 }

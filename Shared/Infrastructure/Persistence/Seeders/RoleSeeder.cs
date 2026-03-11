@@ -16,7 +16,7 @@ public class RoleSeeder
 
     public async Task SeedAsync()
     {
-        string[] roles = [UserRoles.Admin, UserRoles.Owner, UserRoles.Seller];
+        string[] roles = new[] { UserRoles.Admin, UserRoles.Owner, UserRoles.Seller, UserRoles.Reporter };
 
         foreach (var role in roles)
         {
