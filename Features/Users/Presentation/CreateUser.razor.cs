@@ -30,13 +30,7 @@ public partial class CreateUser
         if (string.IsNullOrWhiteSpace(_role)) _errors.Add("Role is required.");
 
         if (_errors.Count != 0)
-        {
-            foreach (var _error in _errors)
-            {
-                Console.WriteLine(_error);
-            }
             return;
-        }
 
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var currentUser = authState.User;
@@ -46,18 +40,26 @@ public partial class CreateUser
             return;
         }
 
+        // Note: guard logic is mirrored in CreateUserTestHarness.InvokeHandleSubmitAsync().
+        // If this logic changes, update the harness too. See: Lotplapp.Tests/Users/CreateUserRoleGuardTests.cs
+
         _isLoading = true;
-
-        var (success, errors) = await UserRepository.CreateAsync(_fullName, _email, _password, _role);
-
-        if (success)
+        try
         {
-            NavigationManager.NavigateTo("/users");
+            var (success, errors) = await UserRepository.CreateAsync(_fullName, _email, _password, _role);
+
+            if (success)
+            {
+                NavigationManager.NavigateTo("/users");
+            }
+            else
+            {
+                _errors = [.. errors];
+            }
         }
-        else
+        finally
         {
-            _errors = [.. errors];
+            _isLoading = false;
         }
-        _isLoading = false;
     }
 }
