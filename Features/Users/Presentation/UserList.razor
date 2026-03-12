@@ -5,79 +5,115 @@
 
 @attribute [Authorize(Roles = "Admin,Owner,Reporter")]
 
-<h2>User Management</h2>
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-primary mb-6">User Management</h1>
+    <AuthorizeView Roles="Admin,Owner">
+        <Authorized>
+            <a href="/users/create"
+               class="inline-flex items-center justify-center px-4 py-2 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition">
+                + Create User
+            </a>
+        </Authorized>
+    </AuthorizeView>
+</div>
 
-<AuthorizeView Roles="Admin,Owner">
-    <Authorized>
-        <a href="/users/create">+ Create User</a>
-    </Authorized>
-</AuthorizeView>
+<!-- Filter bar -->
+<div class="bg-white rounded-xl shadow-md p-6 mb-6">
+    <div class="flex flex-wrap gap-4 items-end">
+        <input @bind="_nameFilter" @bind:event="oninput" placeholder="Search by name or email..."
+               class="block rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary flex-1 min-w-[200px]" />
 
-<div>
-    <input @bind="_nameFilter" @bind:event="oninput" placeholder="Search by name or email..." />
+        <select @bind="_roleFilter"
+                class="block rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary min-w-[140px]">
+            <option value="">All Roles</option>
+            <option value="Admin">Admin</option>
+            <option value="Owner">Owner</option>
+            <option value="Seller">Seller</option>
+            <option value="Reporter">Reporter</option>
+        </select>
 
-    <select @bind="_roleFilter">
-        <option value="">All Roles</option>
-        <option value="Admin">Admin</option>
-        <option value="Owner">Owner</option>
-        <option value="Seller">Seller</option>
-        <option value="Reporter">Reporter</option>
-    </select>
-
-    <select @bind="_statusFilter">
-        <option value="">All Statuses</option>
-        <option value="active">Active</option>
-        <option value="inactive">Inactive</option>
-    </select>
+        <select @bind="_statusFilter"
+                class="block rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary min-w-[140px]">
+            <option value="">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+        </select>
+    </div>
 </div>
 
 @if (_users is null)
 {
-    <p>Loading...</p>
+    <p class="text-gray-400 text-sm py-8 text-center">Loading...</p>
 }
 else if (!FilteredUsers.Any())
 {
-    <p>No users found.</p>
+    <p class="text-gray-500 text-sm py-8 text-center">No users found.</p>
 }
 else
 {
-    <table>
-        <thead>
-            <tr>
-                <th>Full Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var user in FilteredUsers)
-            {
-                <tr>
-                    <td>@user.FullName</td>
-                    <td>@user.Email</td>
-                    <td>@(_roles.GetValueOrDefault(user.Id, "—"))</td>
-                    <td>@(user.IsActive ? "Active" : "Inactive")</td>
-                    <td>@user.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</td>
-                    <td>
-                        <AuthorizeView Roles="Admin,Owner">
-                            <Authorized>
-                                <a href="/users/edit/@user.Id">Edit</a>
-                                @if (user.IsActive)
-                                {
-                                    <button @onclick="() => HandleSetActiveAsync(user.Id, false)">Deactivate</button>
-                                }
-                                else
-                                {
-                                    <button @onclick="() => HandleSetActiveAsync(user.Id, true)">Reactivate</button>
-                                }
-                            </Authorized>
-                        </AuthorizeView>
-                    </td>
+    <div class="bg-white rounded-xl shadow-md overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-primary text-white">
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Full Name</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Email</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Role</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Created</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Actions</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var user in FilteredUsers)
+                {
+                    <tr class="border-b border-gray-100 hover:bg-surface-muted transition-colors">
+                        <td class="px-4 py-3 text-sm text-gray-700">@user.FullName</td>
+                        <td class="px-4 py-3 text-sm text-gray-700">@user.Email</td>
+                        <td class="px-4 py-3 text-sm text-gray-700">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-surface-muted text-primary">
+                                @(_roles.GetValueOrDefault(user.Id, "—"))
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-700">
+                            @if (user.IsActive)
+                            {
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
+                            }
+                            else
+                            {
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Inactive</span>
+                            }
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-700">@user.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</td>
+                        <td class="px-4 py-3 text-sm text-gray-700">
+                            <AuthorizeView Roles="Admin,Owner">
+                                <Authorized>
+                                    <div class="flex gap-2 items-center">
+                                        <a href="/users/edit/@user.Id"
+                                           class="inline-flex items-center justify-center px-2 py-1 rounded-md border border-primary text-primary text-xs font-medium hover:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition">
+                                            Edit
+                                        </a>
+                                        @if (user.IsActive)
+                                        {
+                                            <button @onclick="() => HandleSetActiveAsync(user.Id, false)"
+                                                    class="inline-flex items-center justify-center px-2 py-1 rounded-md bg-red-600 text-white text-xs font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition">
+                                                Deactivate
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button @onclick="() => HandleSetActiveAsync(user.Id, true)"
+                                                    class="inline-flex items-center justify-center px-2 py-1 rounded-md bg-green-600 text-white text-xs font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition">
+                                                Reactivate
+                                            </button>
+                                        }
+                                    </div>
+                                </Authorized>
+                            </AuthorizeView>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }

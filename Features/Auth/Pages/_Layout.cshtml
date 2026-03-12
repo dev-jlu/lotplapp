@@ -1,13 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <base href="/" />
-    <ResourcePreloader />
-    <link rel="stylesheet" href="@Assets["app.css"]" />
-    <link rel="stylesheet" href="@Assets["Lotplapp.styles.css"]" />
+    <title>@ViewData["Title"] — Lotplapp</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -22,14 +18,12 @@
         }
       }
     </script>
-    <ImportMap />
-    <HeadOutlet />
 </head>
-
-<body class="bg-surface text-gray-800">
-    <Routes />
-    <ReconnectModal />
-    <script src="@Assets["_framework/blazor.web.js"]"></script>
+<body class="min-h-screen bg-surface flex items-center justify-center">
+    <div class="w-full max-w-md">
+        <h1 class="text-primary font-bold text-3xl text-center mb-8">Lotplapp</h1>
+        @RenderBody()
+    </div>
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
-
 </html>
