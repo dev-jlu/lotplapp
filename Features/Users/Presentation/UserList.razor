@@ -1,4 +1,5 @@
 @page "/users"
+@rendermode InteractiveServer
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 
@@ -12,11 +13,29 @@
     </Authorized>
 </AuthorizeView>
 
+<div>
+    <input @bind="_nameFilter" @bind:event="oninput" placeholder="Search by name or email..." />
+
+    <select @bind="_roleFilter">
+        <option value="">All Roles</option>
+        <option value="Admin">Admin</option>
+        <option value="Owner">Owner</option>
+        <option value="Seller">Seller</option>
+        <option value="Reporter">Reporter</option>
+    </select>
+
+    <select @bind="_statusFilter">
+        <option value="">All Statuses</option>
+        <option value="active">Active</option>
+        <option value="inactive">Inactive</option>
+    </select>
+</div>
+
 @if (_users is null)
 {
     <p>Loading...</p>
 }
-else if (!_users.Any())
+else if (!FilteredUsers.Any())
 {
     <p>No users found.</p>
 }
@@ -30,10 +49,11 @@ else
                 <th>Role</th>
                 <th>Status</th>
                 <th>Created</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var user in _users)
+            @foreach (var user in FilteredUsers)
             {
                 <tr>
                     <td>@user.FullName</td>
@@ -41,6 +61,21 @@ else
                     <td>@(_roles.GetValueOrDefault(user.Id, "—"))</td>
                     <td>@(user.IsActive ? "Active" : "Inactive")</td>
                     <td>@user.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</td>
+                    <td>
+                        <AuthorizeView Roles="Admin,Owner">
+                            <Authorized>
+                                <a href="/users/edit/@user.Id">Edit</a>
+                                @if (user.IsActive)
+                                {
+                                    <button @onclick="() => HandleSetActiveAsync(user.Id, false)">Deactivate</button>
+                                }
+                                else
+                                {
+                                    <button @onclick="() => HandleSetActiveAsync(user.Id, true)">Reactivate</button>
+                                }
+                            </Authorized>
+                        </AuthorizeView>
+                    </td>
                 </tr>
             }
         </tbody>

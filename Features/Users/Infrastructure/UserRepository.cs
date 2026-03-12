@@ -64,4 +64,42 @@ public class UserRepository : IUserRepository
             ur => roles.GetValueOrDefault(ur.RoleId, "-")
         );
     }
+
+    public async Task<User?> GetByIdAsync(string id)
+        => await _userManager.FindByIdAsync(id);
+
+    public async Task<bool> SetActiveStatusAsync(string id, bool isActive)
+    {
+        var user = await _userManager.FindByIdAsync(id);
+        if (user is null) return false;
+
+        user.IsActive = isActive;
+        var result = await _userManager.UpdateAsync(user);
+        return result.Succeeded;
+    }
+
+    public async Task<(bool Success, IEnumerable<string> Errors)> UpdateAsync(
+        string id,
+        string fullName,
+        string email,
+        string role)
+    {
+        var user = await _userManager.FindByIdAsync(id);
+        if (user is null)
+            return (false, ["User not found."]);
+
+        user.FullName = fullName;
+        user.UserName = email;
+        user.Email = email;
+
+        var updateResult = await _userManager.UpdateAsync(user);
+        if (!updateResult.Succeeded)
+            return (false, updateResult.Errors.Select(e => e.Description));
+
+        var currentRoles = await _userManager.GetRolesAsync(user);
+        await _userManager.RemoveFromRolesAsync(user, currentRoles);
+        await _userManager.AddToRoleAsync(user, role);
+
+        return (true, []);
+    }
 }
