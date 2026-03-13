@@ -4,46 +4,59 @@
 @using Lotplapp.Features.Users.Domain
 @attribute [Authorize(Roles = "Admin,Owner")]
 
-<h2>Create User</h2>
+<div class="bg-white rounded-xl shadow-md p-6 max-w-lg mx-auto">
+    <h1 class="text-2xl font-bold text-primary mb-6">Create User</h1>
 
-@if (_errors.Any())
-{
-    <ul>
-        @foreach (var error in _errors)
-        {
-            <li style="color: red">@error</li>
-        }
-    </ul>
-}
+    @if (_errors.Any())
+    {
+        <div class="mb-4 rounded-md bg-red-50 border border-red-200 p-3">
+            <ul>
+                @foreach (var error in _errors)
+                {
+                    <li class="text-sm text-red-700">@error</li>
+                }
+            </ul>
+        </div>
+    }
 
-<div>
-    <label>Full Name</label>
-    <input @bind="_fullName" type="text" />
+    <div class="mb-4">
+        <label for="fullName" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+        <input id="fullName" @bind="_fullName" type="text"
+               class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" />
+    </div>
+
+    <div class="mb-4">
+        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <input id="email" @bind="_email" type="email"
+               class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" />
+    </div>
+
+    <div class="mb-4">
+        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        <input id="password" @bind="_password" type="password"
+               class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" />
+    </div>
+
+    <div class="mb-4">
+        <label for="role" class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+        <select id="role" @bind="_role"
+                class="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary">
+            <option value="">-- Select Role --</option>
+            <option value="@UserRoles.Admin">Admin</option>
+            <option value="@UserRoles.Owner">Owner</option>
+            <option value="@UserRoles.Seller">Seller</option>
+            <option value="@UserRoles.Reporter">Reporter</option>
+        </select>
+    </div>
+
+    <div class="flex gap-3 mt-6 justify-end">
+        <a href="/users"
+           class="inline-flex items-center justify-center px-4 py-2 rounded-md border border-primary text-primary text-sm font-medium hover:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition">
+            Cancel
+        </a>
+        <button @onclick="HandleSubmit" disabled="@_isLoading"
+                class="inline-flex items-center justify-center px-4 py-2 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition disabled:opacity-50 disabled:cursor-not-allowed">
+            @(_isLoading ? "Creating..." : "Create User")
+        </button>
+    </div>
 </div>
-
-<div>
-    <label>Email</label>
-    <input @bind="_email" type="email" />
-</div>
-
-<div>
-    <label>Password</label>
-    <input @bind="_password" type="password" />
-</div>
-
-<div>
-    <label>Role</label>
-    <select @bind="_role">
-        <option value="">-- Select Role --</option>
-        <option value="@UserRoles.Admin">Admin</option>
-        <option value="@UserRoles.Owner">Owner</option>
-        <option value="@UserRoles.Seller">Seller</option>
-        <option value="@UserRoles.Reporter">Reporter</option>
-    </select>
-</div>
-
-<button @onclick="HandleSubmit" disabled="@_isLoading">
-    @(_isLoading ? "Creating..." : "Create User")
-</button>
-
-<a href="/users">Cancel</a>

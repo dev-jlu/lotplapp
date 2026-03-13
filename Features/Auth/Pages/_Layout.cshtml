@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — Lotplapp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/tailwind.config.js"></script>
+</head>
+<body class="min-h-screen bg-surface flex items-center justify-center">
+    <div class="w-full max-w-md">
+        <h1 class="text-primary font-bold text-3xl text-center mb-8">Lotplapp</h1>
+        @RenderBody()
+    </div>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

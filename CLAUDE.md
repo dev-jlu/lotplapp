@@ -15,15 +15,17 @@ dotnet run --launch-profile http
 dotnet build
 
 # Add a new EF Core migration
-dotnet ef migrations add <MigrationName>
+dotnet ef migrations add <MigrationName> --context AppDbContext
 
 # Apply migrations
-dotnet ef database update
+dotnet ef database update --context AppDbContext
 ```
 
 ## Architecture
 
 **Lotplapp** is an ASP.NET Core 10 + Blazor Web app for multi-role user management. It uses SQLite via Entity Framework Core and ASP.NET Core Identity for auth.
+
+**Seeding** (runs on startup): `RoleSeeder` → creates 4 roles; `AdminSeeder` → creates default admin from `appsettings.Development.json` (`Seed:AdminEmail`, `Seed:AdminPassword`). Migrations location: `Shared/Infrastructure/Persistence/Migrations/`.
 
 ### Structure Pattern
 
@@ -50,7 +52,7 @@ The project uses a **hybrid architecture**: Modular Monolith + Vertical Slice Ar
 ### Key Entry Points
 
 - [Program.cs](Program.cs) — DI registration, Identity config, auth pipeline, database seeding
-- [App.razor](App.razor) — root Blazor component with `CascadingAuthenticationState`
+- [App.razor](App.razor) — root Blazor component with `CascadingAuthenticationState`; loads Tailwind CSS CDN and references `wwwroot/js/tailwind.config.js`
 - [Routes.razor](Routes.razor) — router with `AuthorizeRouteView` and `RedirectToLogin` fallback
 - [Shared/Infrastructure/Persistence/AppDbContext.cs](Shared/Infrastructure/Persistence/AppDbContext.cs) — EF Core context (inherits `IdentityDbContext<User>`)
 
@@ -60,6 +62,30 @@ The project uses a **hybrid architecture**: Modular Monolith + Vertical Slice Ar
 - Login: `/auth/login`, Logout: `/auth/logout` (Razor Pages, exempt from auth)
 - Roles: `Admin`, `Owner`, `Seller`, `Reporter` — constants in [Features/Users/Domain/UserRoles.cs](Features/Users/Domain/UserRoles.cs)
 - Default admin seeded on startup: `admin@lotplapp.com` / `Admin@123` (dev only)
+
+### Testing
+
+Test project: `Lotplapp.Tests/` (xUnit v3, Moq, WebApplicationFactory)
+
+- `Lotplapp.Tests/Auth/` — login, access denied integration tests
+- `Lotplapp.Tests/Users/` — repository, RBAC, deactivation, filter tests
+- `LoginWebAppFactory` — per-test isolated SQLite database via WebApplicationFactory
+- Anti-forgery token handling required in form-post integration tests
+
+```bash
+dotnet test
+```
+
+### Styling
+
+Tailwind CSS via Play CDN. The custom palette config lives in [wwwroot/js/tailwind.config.js](wwwroot/js/tailwind.config.js), which is referenced from both [App.razor](App.razor) and [Features/Auth/Pages/_Layout.cshtml](Features/Auth/Pages/_Layout.cshtml). Do not inline palette config in those files.
+
+Custom palette:
+- `primary` `#1E3A5F` — navy, topbar, primary buttons
+- `accent` `#C9A84C` — gold, badges, highlights
+- `surface` `#F5F7FA` — page background
+
+Use semantic tokens (`bg-primary`, `text-accent`, `bg-surface`) — avoid hardcoded hex in components.
 
 ### Adding a New Feature
 
@@ -81,6 +107,14 @@ The project uses a **hybrid architecture**: Modular Monolith + Vertical Slice Ar
 6. Add `DbSet` to `AppDbContext` and run `dotnet ef migrations add`
 
 **Decision rule:** start with VSA; upgrade to Clean Architecture if the feature has meaningful business logic, multiple use cases, or needs to be tested in isolation.
+
+### Current Features
+
+| Feature | Pattern | Route | Notes |
+|---------|---------|-------|-------|
+| Auth | Razor Pages | `/auth/login`, `/auth/logout`, `/auth/access-denied` | Identity integration |
+| Home | VSA (simple) | `/` | Dashboard placeholder |
+| Users | VSA (complex) | `/users`, `/users/create`, `/users/edit/{Id}` | Admin-only create; Owner can edit; Reporter read-only; soft delete; nav link visible to Admin, Owner, Reporter only (Seller excluded) |
 
 # Agent Teams Lite — Lean Orchestrator Instructions
 

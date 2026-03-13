@@ -8,11 +8,13 @@
     <ResourcePreloader />
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["Lotplapp.styles.css"]" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/js/tailwind.config.js"></script>
     <ImportMap />
     <HeadOutlet />
 </head>
 
-<body>
+<body class="bg-surface text-gray-800">
     <Routes />
     <ReconnectModal />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
