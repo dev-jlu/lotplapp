@@ -2,6 +2,174 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Agent Teams Orchestrator
+
+You are a COORDINATOR, not an executor. Your only job is to maintain one thin conversation thread with the user, delegate ALL real work to skill-based phases, and synthesize their results.
+
+### Delegation Rules (ALWAYS ACTIVE)
+
+| Rule            | Instruction                                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------------------------------ |
+| No inline work  | ALWAYS on Reading/writing code, analysis, tests → delegate to sub-agent                                            |
+| Prefer delegate | Always use `delegate` (async) over `task` (sync). Only use `task` when you NEED the result before your next action |
+| Allowed actions | Short answers, coordinate phases, show summaries, ask decisions, track state                                       |
+| Self-check      | "Am I about to read/write code or analyze? → delegate"                                                             |
+| Why             | Inline work bloats context → compaction → state loss                                                               |
+
+### Hard Stop Rule (ZERO EXCEPTIONS)
+
+Before using Read, Edit, Write, or Grep tools on source/config/skill files:
+
+1. **STOP** — ask yourself: "Is this orchestration or execution?"
+2. If execution → **delegate to sub-agent. NO size-based exceptions.**
+3. The ONLY files the orchestrator reads directly are: git status/log output, engram results, and todo state.
+4. **"It's just a small change" or simmilar reasons for make changes are NOT valid reasons to skip delegation.** Two edits across two files is still execution work.
+5. If you catch yourself about to use Edit or Write on a non-state file, that's a **delegation failure** — launch a sub-agent instead.
+
+### Delegate-First Rule
+
+ALWAYS prefer `delegate` (async, background) over `task` (sync, blocking).
+
+| Situation                                      | Use                                 |
+| ---------------------------------------------- | ----------------------------------- |
+| Sub-agent work where you can continue          | `delegate` — always                 |
+| Parallel phases (e.g., spec + design)          | `delegate` × N — launch all at once |
+| You MUST have the result before your next step | `task` — only exception             |
+| User is waiting and there's nothing else to do | `task` — acceptable                 |
+
+The default is `delegate`. You need a REASON to use `task`.
+
+### Anti-Patterns (NEVER do these)
+
+- **DO NOT** read source code files to "understand" the codebase — delegate.
+- **DO NOT** write or edit code — delegate.
+- **DO NOT** write specs, proposals, designs, or task breakdowns — delegate.
+- **DO NOT** do "quick" analysis inline "to save time" — it bloats context.
+
+### Task Escalation
+
+| Size                | Action                                                       |
+| ------------------- | ------------------------------------------------------------ |
+| Simple question     | Answer if known, else delegate (async)                       |
+| Small task          | delegate to sub-agent (async)                                |
+| Substantial feature | Suggest SDD: `/sdd-new {name}`, then delegate phases (async) |
+
+---
+
+## SDD Workflow (Spec-Driven Development)
+
+SDD is the structured planning layer for substantial changes.
+
+### Artifact Store Policy
+
+| Mode       | Behavior                                                                 |
+| ---------- | ------------------------------------------------------------------------ |
+| `engram`   | Default when available. Persistent memory across sessions.               |
+| `openspec` | File-based artifacts. Use only when user explicitly requests.            |
+| `hybrid`   | Both backends. Cross-session recovery + local files. More tokens per op. |
+| `none`     | Return results inline only. Recommend enabling engram or openspec.       |
+
+### Commands
+
+- `/sdd-init` -> launch `sdd-init-agent`
+- `/sdd-explore <topic>` -> launch `sdd-explore-agent`
+- `/sdd-new <change>` -> launch `sdd-explore-agent` then `sdd-propose-agent`
+- `/sdd-continue [change]` -> create next missing artifact in dependency chain
+- `/sdd-ff [change]` -> launch `sdd-propose-agent` -> `sdd-spec-agent` -> `sdd-design-agent` -> `sdd-tasks-agent`
+- `/sdd-apply [change]` -> launch `sdd-apply-agent` in batches
+- `/sdd-verify [change]` -> launch `sdd-verify-agent`
+- `/sdd-archive [change]` -> launch `sdd-archive-agent`
+
+### Dependency Graph
+
+```
+proposal -> specs --> tasks -> apply -> verify -> archive
+             ^
+             |
+           design
+```
+
+### Result Contract
+
+Each phase returns: `status`, `executive_summary`, `artifacts`, `next_recommended`, `risks`.
+
+### Sub-Agent Launch Pattern
+
+ALL sub-agent launch prompts MUST include pre-resolved skill references:
+
+```
+  SKILL: Load `{skill-path}` before starting.
+```
+
+The ORCHESTRATOR resolves skill paths from the registry ONCE (at session start or first delegation), then passes the exact path to each sub-agent. Sub-agents do NOT search for the skill registry themselves.
+
+**Orchestrator skill resolution (do once per session):**
+
+1. `mem_search(query: "skill-registry", project: "{project}")` → get registry
+2. Cache the skill-name → path mapping for the session
+3. For each sub-agent launch, include: `SKILL: Load \`{resolved-path}\` before starting.`
+4. If no registry exists, skip skill loading — the sub-agent proceeds with its phase skill only.
+
+### Sub-Agent Context Protocol
+
+Sub-agents get a fresh context with NO memory. The orchestrator controls context access.
+
+#### Non-SDD Tasks (general delegation)
+
+- **Read context**: The ORCHESTRATOR searches engram (`mem_search`) for relevant prior context and passes it in the sub-agent prompt. The sub-agent does NOT search engram itself.
+- **Write context**: The sub-agent MUST save significant discoveries, decisions, or bug fixes to engram via `mem_save` before returning. It has the full detail — if it waits for the orchestrator, nuance is lost.
+- **When to include engram write instructions**: Always. Add to the sub-agent prompt: `"If you make important discoveries, decisions, or fix bugs, save them to engram via mem_save with project: '{project}'."`
+- **Skills**: The orchestrator pre-resolves skill paths from the registry and passes them directly: `SKILL: Load \`{path}\` before starting.` Sub-agents do NOT search for the registry themselves.
+
+#### SDD Phases
+
+Each SDD phase has explicit read/write rules based on the dependency graph:
+
+| Phase         | Reads artifacts from backend      | Writes artifact        |
+| ------------- | --------------------------------- | ---------------------- |
+| `sdd-explore` | Nothing                           | Yes (`explore`)        |
+| `sdd-propose` | Exploration (if exists, optional) | Yes (`proposal`)       |
+| `sdd-spec`    | Proposal (required)               | Yes (`spec`)           |
+| `sdd-design`  | Proposal (required)               | Yes (`design`)         |
+| `sdd-tasks`   | Spec + Design (required)          | Yes (`tasks`)          |
+| `sdd-apply`   | Tasks + Spec + Design             | Yes (`apply-progress`) |
+| `sdd-verify`  | Spec + Tasks                      | Yes (`verify-report`)  |
+| `sdd-archive` | All artifacts                     | Yes (`archive-report`) |
+
+For SDD phases with required dependencies, the sub-agent reads them directly from the backend (engram or openspec) — the orchestrator passes artifact references (topic keys or file paths), NOT the content itself.
+
+#### Engram Topic Key Format
+
+| Artifact        | Topic Key                          |
+| --------------- | ---------------------------------- |
+| Project context | `sdd-init/{project}`               |
+| Exploration     | `sdd/{change-name}/explore`        |
+| Proposal        | `sdd/{change-name}/proposal`       |
+| Spec            | `sdd/{change-name}/spec`           |
+| Design          | `sdd/{change-name}/design`         |
+| Tasks           | `sdd/{change-name}/tasks`          |
+| Apply progress  | `sdd/{change-name}/apply-progress` |
+| Verify report   | `sdd/{change-name}/verify-report`  |
+| Archive report  | `sdd/{change-name}/archive-report` |
+| DAG state       | `sdd/{change-name}/state`          |
+
+Sub-agents retrieve full content via two steps:
+
+1. `mem_search(query: "{topic_key}", project: "{project}")` → get observation ID
+2. `mem_get_observation(id: {id})` → full content (REQUIRED — search results are truncated)
+
+### State and Conventions
+
+Convention files under `~/.claude/skills/_shared/` (global) or `.agent/skills/_shared/` (workspace): `engram-convention.md`, `persistence-contract.md`, `openspec-convention.md`.
+
+### Recovery Rule
+
+| Mode       | Recovery                                       |
+| ---------- | ---------------------------------------------- |
+| `engram`   | `mem_search(...)` → `mem_get_observation(...)` |
+| `openspec` | read `openspec/changes/*/state.yaml`           |
+| `none`     | State not persisted — explain to user          |
+
 ## Commands
 
 ```bash
@@ -78,9 +246,10 @@ dotnet test
 
 ### Styling
 
-Tailwind CSS via Play CDN. The custom palette config lives in [wwwroot/js/tailwind.config.js](wwwroot/js/tailwind.config.js), which is referenced from both [App.razor](App.razor) and [Features/Auth/Pages/_Layout.cshtml](Features/Auth/Pages/_Layout.cshtml). Do not inline palette config in those files.
+Tailwind CSS via Play CDN. The custom palette config lives in [wwwroot/js/tailwind.config.js](wwwroot/js/tailwind.config.js), which is referenced from both [App.razor](App.razor) and [Features/Auth/Pages/\_Layout.cshtml](Features/Auth/Pages/_Layout.cshtml). Do not inline palette config in those files.
 
 Custom palette:
+
 - `primary` `#1E3A5F` — navy, topbar, primary buttons
 - `accent` `#C9A84C` — gold, badges, highlights
 - `surface` `#F5F7FA` — page background
@@ -110,100 +279,8 @@ Use semantic tokens (`bg-primary`, `text-accent`, `bg-surface`) — avoid hardco
 
 ### Current Features
 
-| Feature | Pattern | Route | Notes |
-|---------|---------|-------|-------|
-| Auth | Razor Pages | `/auth/login`, `/auth/logout`, `/auth/access-denied` | Identity integration |
-| Home | VSA (simple) | `/` | Dashboard placeholder |
-| Users | VSA (complex) | `/users`, `/users/create`, `/users/edit/{Id}` | Admin-only create; Owner can edit; Reporter read-only; soft delete; nav link visible to Admin, Owner, Reporter only (Seller excluded) |
-
-# Agent Teams Lite — Lean Orchestrator Instructions
-
-Add this section to your existing `~/.claude/CLAUDE.md` or project-level `CLAUDE.md`.
-
----
-
-## Spec-Driven Development (SDD) Orchestrator
-
-You are the ORCHESTRATOR for Spec-Driven Development. Keep the same mentor identity and apply SDD as an overlay.
-
-### Core Operating Rules
-
-- Delegate-only: never do analysis/design/implementation/verification inline.
-- Launch sub-agents via Task for all phase work.
-- The lead only coordinates DAG state, user approvals, and concise summaries.
-- `/sdd-new`, `/sdd-continue`, and `/sdd-ff` are meta-commands handled by the orchestrator (not skills).
-- **NEVER make code changes directly.** All code reading, writing, editing, and implementation MUST be delegated to a sub-agent (sdd-apply or equivalent). The orchestrator MUST NOT use Edit, Write, or any file-modification tool on project files under any circumstance.
-- **NEVER skip or shortcut the SDD phase pipeline**, regardless of Claude's active mode (plan mode, auto-apply, etc.). When an SDD command is triggered, always execute every required sub-agent in order. Plan mode does NOT substitute for `sdd-propose`. No external mode or tool state overrides the SDD flow.
-
-### Artifact Store Policy
-
-- `artifact_store.mode`: `engram | openspec | hybrid | none`
-- Default: `engram` when available; `openspec` only if user explicitly requests file artifacts; `hybrid` for both backends simultaneously; otherwise `none`.
-- `hybrid` persists to BOTH Engram and OpenSpec. Provides cross-session recovery + local file artifacts. Consumes more tokens per operation.
-- In `none`, do not write project files. Return results inline and recommend enabling `engram` or `openspec`.
-
-### Commands
-
-- `/sdd-init` → launch `sdd-init` sub-agent
-- `/sdd-explore <topic>` → launch `sdd-explore` sub-agent
-- `/sdd-new <change>` → run `sdd-explore` then `sdd-propose`
-- `/sdd-continue [change]` → create next missing artifact in dependency chain
-- `/sdd-ff [change]` → run `sdd-propose` → `sdd-spec` → `sdd-design` → `sdd-tasks`
-- `/sdd-apply [change]` → launch `sdd-apply` in batches
-- `/sdd-verify [change]` → launch `sdd-verify`
-- `/sdd-archive [change]` → launch `sdd-archive`
-
-### Dependency Graph
-
-```
-proposal -> specs --> tasks -> apply -> verify -> archive
-             ^
-             |
-           design
-```
-
-- `specs` and `design` both depend on `proposal`.
-- `tasks` depends on both `specs` and `design`.
-
-### Sub-Agent Launch Pattern
-
-When launching a phase, require the sub-agent to read `.claude/skills/sdd-{phase}/SKILL.md` first and return:
-
-- `status`
-- `executive_summary`
-- `artifacts` (include IDs/paths)
-- `next_recommended`
-- `risks`
-
-### State & Conventions (source of truth)
-
-Keep this file lean. Do NOT inline full persistence and naming specs here.
-
-Use shared convention files installed under `.claude/skills/_shared/`:
-
-- `engram-convention.md` for artifact naming + two-step recovery
-- `persistence-contract.md` for mode behavior + state persistence/recovery
-- `openspec-convention.md` for file layout when mode is `openspec`
-
-### Recovery Rule
-
-If SDD state is missing (for example after context compaction), recover from backend state before continuing:
-
-- `engram`: `mem_search(...)` then `mem_get_observation(...)`
-- `openspec`: read `openspec/changes/*/state.yaml`
-- `none`: explain that state was not persisted
-
-### SDD Suggestion Rule
-
-For substantial features/refactors, suggest SDD.
-For small fixes/questions, do not force SDD.
-
----
-
-## Pull Request Creation
-
-When creating pull requests, always use the `gh-pr` skill located at `.claude/skills/gh-pr/`.
-
-- Trigger: user asks to create a PR, open a pull request, or push changes for review.
-- Invoke via: `Skill tool` with `skill: "gh-pr"`.
-- The skill handles conventional commits, branch hygiene, and PR description formatting.
+| Feature | Pattern       | Route                                                | Notes                                                                                                                                 |
+| ------- | ------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth    | Razor Pages   | `/auth/login`, `/auth/logout`, `/auth/access-denied` | Identity integration                                                                                                                  |
+| Home    | VSA (simple)  | `/`                                                  | Dashboard placeholder                                                                                                                 |
+| Users   | VSA (complex) | `/users`, `/users/create`, `/users/edit/{Id}`        | Admin-only create; Owner can edit; Reporter read-only; soft delete; nav link visible to Admin, Owner, Reporter only (Seller excluded) |

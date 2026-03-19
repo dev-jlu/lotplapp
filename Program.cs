@@ -7,6 +7,8 @@ using static System.Net.Mime.MediaTypeNames;
 using Lotplapp.Shared.Infrastructure.Persistence.Seeders;
 using Lotplapp.Features.Users.Domain;
 using Lotplapp.Features.Users.Infrastructure;
+using Lotplapp.Features.Plots.Domain;
+using Lotplapp.Features.Plots.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +46,7 @@ builder.Services.AddScoped<AdminSeeder>();
 builder.Services.AddScoped<DatabaseSeeder>();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IPlotRepository, PlotRepository>();
 
 builder.Services.AddRazorPages()
     .WithRazorPagesRoot("/Features");

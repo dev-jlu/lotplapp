@@ -1,0 +1,87 @@
+@page "/plots"
+@layout MainLayout
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Lotplapp.Features.Plots.Domain
+
+@attribute [Authorize(Roles = "Admin,Owner")]
+
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-primary">Plot Management</h1>
+    <a href="/plots/create"
+       class="inline-flex items-center justify-center px-4 py-2 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition">
+        + Create Plot
+    </a>
+</div>
+
+@if (_plots is null)
+{
+    <p class="text-gray-400 text-sm py-8 text-center">Loading...</p>
+}
+else if (!_plots.Any())
+{
+    <p class="text-gray-500 text-sm py-8 text-center">No plots found.</p>
+}
+else
+{
+    <div class="bg-white rounded-xl shadow-md overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-primary text-white">
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Name</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Owner</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Currency</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Total Lots</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Created</th>
+                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var plot in _plots)
+                {
+                    <tr class="border-b border-gray-100 hover:bg-surface-muted transition-colors">
+                        <td class="px-4 py-3 text-sm text-gray-700">@plot.Name</td>
+                        <td class="px-4 py-3 text-sm text-gray-700">@(_ownerNames.GetValueOrDefault(plot.OwnerId, "—"))</td>
+                        <td class="px-4 py-3 text-sm text-gray-700">@plot.Currency</td>
+                        <td class="px-4 py-3 text-sm text-gray-500">—</td>
+                        <td class="px-4 py-3 text-sm text-gray-700">
+                            @if (plot.IsActive)
+                            {
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
+                            }
+                            else
+                            {
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">Inactive</span>
+                            }
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-700">@plot.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</td>
+                        <td class="px-4 py-3 text-sm text-gray-700">
+                            <div class="flex gap-2 items-center">
+                                <a href="/plots/edit/@plot.Id"
+                                   class="inline-flex items-center justify-center px-2 py-1 rounded-md border border-primary text-primary text-xs font-medium hover:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition">
+                                    Edit
+                                </a>
+                                @if (plot.IsActive)
+                                {
+                                    <button @onclick="() => HandleToggleActiveAsync(plot.Id, false)"
+                                            class="inline-flex items-center justify-center px-2 py-1 rounded-md bg-red-600 text-white text-xs font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition">
+                                        Deactivate
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button @onclick="() => HandleToggleActiveAsync(plot.Id, true)"
+                                            class="inline-flex items-center justify-center px-2 py-1 rounded-md bg-green-600 text-white text-xs font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition">
+                                        Reactivate
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

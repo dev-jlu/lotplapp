@@ -47,3 +47,7 @@ desktop.ini
 
 # MCP local config (do not commit local server config)
 .vscode/mcp.json
+
+
+# ATL — local agent infrastructure (not committed)
+.atl/
